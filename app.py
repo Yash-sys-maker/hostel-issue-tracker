@@ -30,6 +30,25 @@ def home():
     # This will load our high-contrast UI later
     return render_template('index.html')
 
+@app.route('/add_issue', methods=['POST'])
+def add_issue():
+    # Receive the data sent by the JavaScript we wrote earlier
+    data = request.json
+    room = data.get('room')
+    title = data.get('title')
+    desc = data.get('desc')
+
+    # Save it into our SQLite database
+    conn = sqlite3.connect('hostel_issues.db')
+    cursor = conn.cursor()
+    cursor.execute('INSERT INTO issues (room_number, title, description) VALUES (?, ?, ?)', 
+                   (room, title, desc))
+    conn.commit()
+    conn.close()
+
+    return jsonify({"status": "success", "message": "Issue added to database!"})
+
+
 if __name__ == '__main__':
     # Running in debug mode so it updates instantly when we save
     app.run(debug=True, port=5000)
