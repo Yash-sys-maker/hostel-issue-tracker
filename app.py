@@ -31,6 +31,14 @@ def init_db():
             role TEXT DEFAULT 'student'
         )
     ''')
+
+    cursor.execute('''
+        CREATE TABLE IF NOT EXISTS votes (
+            user_id INTEGER,
+            issue_id INTEGER,
+            UNIQUE(user_id, issue_id)
+        )
+    ''')
     
     conn.commit()
     conn.close()
@@ -152,6 +160,33 @@ def resolve_issue(issue_id):
     conn.commit()
     conn.close()
     return jsonify({"status": "success"})
+
+@app.route('/upvote_issue/<int:issue_id>', methods=['POST'])
+def upvote_issue(issue_id):
+    if 'user_id' not in session:
+        return jsonify({"status": "error", "message": "Login to upvote"}), 401
+
+    user_id = session['user_id']
+    conn = sqlite3.connect('hostel_issues.db')
+    cursor = conn.cursor()
+
+    try:
+        # 1. Try to record this specific user's vote for this specific issue
+        cursor.execute('INSERT INTO votes (user_id, issue_id) VALUES (?, ?)', (user_id, issue_id))
+        
+        # 2. If the line above worked, increment the count
+        cursor.execute('UPDATE issues SET upvotes = upvotes + 1 WHERE id = ?', (issue_id,))
+        
+        conn.commit()
+        return jsonify({"status": "success"})
+    
+    except sqlite3.IntegrityError:
+        # This error happens if the (user_id, issue_id) pair already exists
+        return jsonify({"status": "error", "message": "You have already upvoted this!"}), 400
+    
+    finally:
+        conn.close()
+        
 
 if __name__ == '__main__':
     # Running in debug mode so it updates instantly when we save

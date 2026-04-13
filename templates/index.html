@@ -152,6 +152,21 @@
         }
     }
 
+    async function upvoteIssue(issueId) {
+    const response = await fetch(`/upvote_issue/${issueId}`, {
+        method: 'POST'
+    });
+
+    if (response.ok) {
+        loadIssues(); 
+    } else {
+        const result = await response.json();
+        if (result.message === "You have already upvoted this!") {
+            alert("Limit reached: You can only upvote an issue once.");
+        }
+    }
+}
+
     // 3. Function to load and display issues
     async function loadIssues() {
         const response = await fetch('/get_issues');
@@ -179,7 +194,7 @@
                     ${resolveBtn}
                 </div>
                 <div>
-                    <button class="upvote-btn">▲ ${issue.upvotes}</button>
+                    <button class="upvote-btn" onclick="upvoteIssue(${issue.id})">▲ ${issue.upvotes}</button>
                 </div>
             `;
             issueFeed.appendChild(card);
