@@ -23,5 +23,28 @@
         </form>
         <a href="/register_page" class="link">Don't have an account? Register</a>
     </div>
+
+<script>
+    document.getElementById('loginForm').addEventListener('submit', async (e) => {
+        e.preventDefault();
+        const username = document.getElementById('username').value;
+        const password = document.getElementById('password').value;
+
+        const response = await fetch('/login_action', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ username, password })
+        });
+
+        const result = await response.json();
+        if (response.ok) {
+            alert("Login Successful! Welcome, " + username);
+            window.location.href = '/'; // Go to the main issue board
+        } else {
+            alert("Error: " + result.message);
+        }
+    });
+</script>
+
 </body>
 </html>

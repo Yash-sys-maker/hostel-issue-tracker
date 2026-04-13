@@ -1,7 +1,8 @@
 import sqlite3
-from flask import Flask, request, jsonify, render_template
+from flask import Flask, request, jsonify, render_template, session, redirect, url_for
 
 app = Flask(__name__)
+app.secret_key = 'super_secret_hostel_key'
 
 # --- DATABASE SETUP ---
 def init_db():
@@ -39,8 +40,12 @@ init_db()
 # --- SERVER ROUTES ---
 @app.route('/')
 def home():
-    # This will load our high-contrast UI later
-    return render_template('index.html')
+    if 'username' not in session:
+        return redirect(url_for('login_page'))
+    
+    return render_template('index.html', 
+                           username=session['username'], 
+                           role=session['role'])
 
 @app.route('/add_issue', methods=['POST'])
 def add_issue():
@@ -104,6 +109,35 @@ def register():
         return jsonify({"status": "success"})
     except sqlite3.IntegrityError:
         return jsonify({"status": "error", "message": "Username already exists!"}), 400
+
+@app.route('/login_action', methods=['POST'])
+def login_action():
+    data = request.json
+    username = data.get('username')
+    password = data.get('password')
+
+    conn = sqlite3.connect('hostel_issues.db')
+    conn.row_factory = sqlite3.Row
+    cursor = conn.cursor()
+    
+    # Check if the user exists
+    cursor.execute('SELECT * FROM users WHERE username = ? AND password = ?', (username, password))
+    user = cursor.fetchone()
+    conn.close()
+
+    if user:
+        # Save the user info in a "Session" cookie
+        session['user_id'] = user['id']
+        session['username'] = user['username']
+        session['role'] = user['role']
+        return jsonify({"status": "success", "role": user['role']})
+    else:
+        return jsonify({"status": "error", "message": "Invalid credentials"}), 401
+
+@app.route('/logout')
+def logout():
+    session.clear() # This wipes the cookie
+    return redirect(url_for('login_page'))
 
 if __name__ == '__main__':
     # Running in debug mode so it updates instantly when we save
