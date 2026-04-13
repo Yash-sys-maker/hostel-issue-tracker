@@ -29,24 +29,35 @@
     </div>
 
 <script>
+    console.log("Registration script loaded!"); // This confirms the script is alive
+
     document.getElementById('registerForm').addEventListener('submit', async (e) => {
         e.preventDefault();
+        console.log("Submit button clicked!"); 
+
         const username = document.getElementById('username').value;
         const password = document.getElementById('password').value;
         const role = document.getElementById('role').value;
 
-        const response = await fetch('/register', {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ username, password, role })
-        });
+        try {
+            const response = await fetch('/register', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ username, password, role })
+            });
 
-        const result = await response.json();
-        if (response.ok) {
-            alert("Account created! Now you can login.");
-            window.location.href = '/login';
-        } else {
-            alert(result.message);
+            const result = await response.json();
+            console.log("Server response:", result);
+
+            if (response.ok) {
+                alert("Account created! Now you can login.");
+                window.location.href = '/login';
+            } else {
+                alert("Error: " + result.message);
+            }
+        } catch (error) {
+            console.error("Fetch error:", error);
+            alert("Could not connect to the server.");
         }
     });
 </script>
