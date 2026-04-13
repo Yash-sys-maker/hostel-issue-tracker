@@ -4,97 +4,67 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Hostel Issue Board</title>
-    <style>
-        /* Strict high-contrast black and white styling */
-        :root {
-            --bg-color: #ffffff;
-            --text-color: #000000;
-            --border-color: #000000;
-        }
+    
+<style>
+    :root {
+        --bg: #ffffff;
+        --text: #000000;
+        --border: #000000;
+    }
 
-        body {
-            font-family: monospace, sans-serif;
-            background-color: var(--bg-color);
-            color: var(--text-color);
-            margin: 0;
-            padding: 20px;
-            display: flex;
-            justify-content: center;
-        }
+    body {
+        font-family: 'Courier New', Courier, monospace; /* Engineer-style font */
+        background-color: var(--bg);
+        color: var(--text);
+        margin: 0;
+        padding: 40px 20px;
+        display: flex;
+        justify-content: center;
+    }
 
-        .container {
-            width: 100%;
-            max-width: 600px;
-        }
+    .container { width: 100%; max-width: 700px; }
 
-        h1 {
-            text-align: center;
-            border-bottom: 2px solid var(--border-color);
-            padding-bottom: 10px;
-            text-transform: uppercase;
-        }
+    /* Clean Navbar */
+    nav { 
+        display: flex; 
+        justify-content: space-between; 
+        border: 2px solid var(--border); 
+        padding: 15px; 
+        margin-bottom: 40px;
+        font-size: 0.9em;
+    }
 
-        .submit-section {
-            border: 2px solid var(--border-color);
-            padding: 20px;
-            margin-bottom: 30px;
-            background-color: var(--bg-color);
-        }
+    h1 { text-align: left; text-transform: uppercase; letter-spacing: 4px; border-bottom: 4px solid var(--border); padding-bottom: 10px; }
 
-        .submit-section h2 {
-            margin-top: 0;
-        }
+    /* Modernized Forms */
+    .submit-section { border: 2px solid var(--border); padding: 25px; margin-bottom: 40px; }
+    input, textarea, select, button { 
+        width: 100%; box-sizing: border-box; margin-bottom: 15px; padding: 12px; 
+        border: 2px solid var(--border); background: var(--bg); font-family: inherit; font-weight: bold;
+    }
 
-        input, textarea, button {
-            width: 100%;
-            box-sizing: border-box;
-            margin-bottom: 15px;
-            padding: 10px;
-            border: 1px solid var(--border-color);
-            font-family: inherit;
-            background-color: var(--bg-color);
-            color: var(--text-color);
-        }
+    button { background: var(--text); color: var(--bg); cursor: pointer; text-transform: uppercase; transition: 0.2s; }
+    button:hover { background: var(--bg); color: var(--text); }
 
-        button {
-            background-color: var(--text-color);
-            color: var(--bg-color);
-            font-weight: bold;
-            cursor: pointer;
-            text-transform: uppercase;
-        }
+    /* Filter Bar */
+    .filter-bar { margin-bottom: 20px; display: flex; gap: 10px; align-items: center; }
+    .filter-btn { width: auto; padding: 5px 15px; font-size: 0.8em; }
 
-        button:hover {
-            background-color: var(--bg-color);
-            color: var(--text-color);
-            border: 2px solid var(--text-color);
-        }
+    /* Issue Cards - Premium Look */
+    .issue-card { 
+        border: 2px solid var(--border); padding: 20px; margin-bottom: 20px; 
+        display: flex; justify-content: space-between; align-items: flex-start;
+    }
+    .status-tag { 
+        display: inline-block; padding: 2px 8px; border: 1px solid var(--border); 
+        font-size: 0.7em; text-transform: uppercase; margin-bottom: 10px;
+    }
+    .resolved { background: #000; color: #fff; }
 
-        .issue-card {
-            border: 1px solid var(--border-color);
-            padding: 15px;
-            margin-bottom: 15px;
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-            background-color: var(--bg-color);
-        }
+    .issue-details h3 { margin: 5px 0; text-transform: uppercase; }
+    .issue-meta { font-size: 0.8em; opacity: 0.7; }
+</style>
 
-        .issue-details h3 {
-            margin: 0 0 5px 0;
-        }
-
-        .issue-meta {
-            font-size: 0.85em;
-            font-weight: bold;
-        }
-
-        .upvote-btn {
-            width: auto;
-            margin-bottom: 0;
-            padding: 10px 20px;
-        }
-    </style>
 </head>
 <body>
 
@@ -123,6 +93,13 @@
         </div>
 
         <h2>Current Issues</h2>
+<div class="filter-bar">
+    <strong>FILTER:</strong>
+    <button class="filter-btn" onclick="loadIssues('all')">ALL</button>
+    <button class="filter-btn" onclick="loadIssues('open')">OPEN</button>
+    <button class="filter-btn" onclick="loadIssues('resolved')">RESOLVED</button>
+</div>
+
         <div id="issueFeed">
             </div>
     </div>
@@ -168,38 +145,43 @@
 }
 
     // 3. Function to load and display issues
-    async function loadIssues() {
-        const response = await fetch('/get_issues');
-        const issues = await response.json();
-        
-        issueFeed.innerHTML = ''; 
-
-        issues.forEach(issue => {
-            const card = document.createElement('div');
-            card.className = 'issue-card';
-            
-            const isAdmin = "{{ role }}" === "admin";
-            
-            // Logic for the resolve button appearance
-            const resolveBtn = (isAdmin && issue.status !== 'resolved') 
-                ? `<button onclick="resolveIssue(${issue.id})" class="upvote-btn" style="background:white; color:black; border:1px solid black; margin-top:10px;">RESOLVE</button>` 
-                : "";
-
-            card.innerHTML = `
-                <div class="issue-details">
-                    <h3>${issue.title} ${issue.status === 'resolved' ? '✅' : ''}</h3>
-                    <p>${issue.description}</p>
-                    <span class="issue-meta">Room: ${issue.room_number} | Status: ${issue.status}</span>
-                    <br>
-                    ${resolveBtn}
-                </div>
-                <div>
-                    <button class="upvote-btn" onclick="upvoteIssue(${issue.id})">▲ ${issue.upvotes}</button>
-                </div>
-            `;
-            issueFeed.appendChild(card);
-        });
+    async function loadIssues(filter = 'all') {
+    const response = await fetch('/get_issues');
+    let issues = await response.json();
+    
+    // Apply filter logic
+    if (filter !== 'all') {
+        issues = issues.filter(i => i.status === filter);
     }
+
+    issueFeed.innerHTML = ''; 
+
+    issues.forEach(issue => {
+        const card = document.createElement('div');
+        card.className = 'issue-card';
+        
+        const isAdmin = "{{ role }}" === "admin";
+        const isResolved = issue.status === 'resolved';
+        
+        const resolveBtn = (isAdmin && !isResolved) 
+            ? `<button onclick="resolveIssue(${issue.id})" class="filter-btn">RESOLVE</button>` 
+            : "";
+
+        card.innerHTML = `
+            <div class="issue-details">
+                <div class="status-tag ${isResolved ? 'resolved' : ''}">${issue.status}</div>
+                <h3>${issue.title}</h3>
+                <p>${issue.description}</p>
+                <span class="issue-meta">ROOM ${issue.room_number} | ID #${issue.id}</span>
+                <br>${resolveBtn}
+            </div>
+            <div>
+                <button class="upvote-btn" onclick="upvoteIssue(${issue.id})">▲ ${issue.upvotes}</button>
+            </div>
+        `;
+        issueFeed.appendChild(card);
+    });
+}
 
     // 4. Handle form submission
     issueForm.addEventListener('submit', async (e) => {
