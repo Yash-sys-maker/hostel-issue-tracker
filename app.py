@@ -17,7 +17,8 @@ def init_db():
             room_number TEXT NOT NULL,
             title TEXT NOT NULL,
             description TEXT NOT NULL,
-            upvotes INTEGER DEFAULT 0
+            upvotes INTEGER DEFAULT 0,
+                   status TEXT DEFAULT 'open'
         )
     ''')
     
@@ -138,6 +139,19 @@ def login_action():
 def logout():
     session.clear() # This wipes the cookie
     return redirect(url_for('login_page'))
+
+@app.route('/resolve_issue/<int:issue_id>', methods=['POST'])
+def resolve_issue(issue_id):
+    # Security Check: Only Admins can resolve
+    if session.get('role') != 'admin':
+        return jsonify({"status": "error", "message": "Unauthorized"}), 403
+
+    conn = sqlite3.connect('hostel_issues.db')
+    cursor = conn.cursor()
+    cursor.execute('UPDATE issues SET status = "resolved" WHERE id = ?', (issue_id,))
+    conn.commit()
+    conn.close()
+    return jsonify({"status": "success"})
 
 if __name__ == '__main__':
     # Running in debug mode so it updates instantly when we save

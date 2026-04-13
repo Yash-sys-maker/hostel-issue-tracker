@@ -131,15 +131,69 @@
     const issueForm = document.getElementById('issueForm');
     const issueFeed = document.getElementById('issueFeed');
 
-    // Function to handle form submission
+    // 1. Display user info (Passed from Python)
+    document.getElementById('displayUser').innerText = "{{ username }}";
+    document.getElementById('displayRole').innerText = "{{ role }}";
+
+    // 2. THE MISSING PIECE: The function that talks to the backend
+    async function resolveIssue(issueId) {
+        console.log("Attempting to resolve issue:", issueId);
+        
+        const response = await fetch(`/resolve_issue/${issueId}`, {
+            method: 'POST'
+        });
+
+        if (response.ok) {
+            console.log("Success! Refreshing feed...");
+            loadIssues(); // Refresh the list to show the checkmark
+        } else {
+            const error = await response.json();
+            alert("Error: " + error.message);
+        }
+    }
+
+    // 3. Function to load and display issues
+    async function loadIssues() {
+        const response = await fetch('/get_issues');
+        const issues = await response.json();
+        
+        issueFeed.innerHTML = ''; 
+
+        issues.forEach(issue => {
+            const card = document.createElement('div');
+            card.className = 'issue-card';
+            
+            const isAdmin = "{{ role }}" === "admin";
+            
+            // Logic for the resolve button appearance
+            const resolveBtn = (isAdmin && issue.status !== 'resolved') 
+                ? `<button onclick="resolveIssue(${issue.id})" class="upvote-btn" style="background:white; color:black; border:1px solid black; margin-top:10px;">RESOLVE</button>` 
+                : "";
+
+            card.innerHTML = `
+                <div class="issue-details">
+                    <h3>${issue.title} ${issue.status === 'resolved' ? '✅' : ''}</h3>
+                    <p>${issue.description}</p>
+                    <span class="issue-meta">Room: ${issue.room_number} | Status: ${issue.status}</span>
+                    <br>
+                    ${resolveBtn}
+                </div>
+                <div>
+                    <button class="upvote-btn">▲ ${issue.upvotes}</button>
+                </div>
+            `;
+            issueFeed.appendChild(card);
+        });
+    }
+
+    // 4. Handle form submission
     issueForm.addEventListener('submit', async (e) => {
-        e.preventDefault(); // Stop the page from refreshing
+        e.preventDefault(); 
 
         const room = document.getElementById('roomNumber').value;
         const title = document.getElementById('issueTitle').value;
         const desc = document.getElementById('issueDesc').value;
 
-        // Send data to Python (We will build this 'add_issue' route next)
         const response = await fetch('/add_issue', {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
@@ -147,42 +201,13 @@
         });
 
         if (response.ok) {
-            alert("Issue reported to the system!");
             issueForm.reset();
-            // We would call a function here to refresh the feed
+            loadIssues(); // This makes the new issue appear instantly!
         }
     });
 
-    // Function to load issues from the backend
-async function loadIssues() {
-    const response = await fetch('/get_issues');
-    const issues = await response.json();
-    
-    issueFeed.innerHTML = ''; // Clear the current list
-
-    issues.forEach(issue => {
-        const card = document.createElement('div');
-        card.className = 'issue-card';
-        card.innerHTML = `
-            <div class="issue-details">
-                <h3>${issue.title}</h3>
-                <p>${issue.description}</p>
-                <span class="issue-meta">Room: ${issue.room_number}</span>
-            </div>
-            <div>
-                <button class="upvote-btn">▲ ${issue.upvotes}</button>
-            </div>
-        `;
-        issueFeed.appendChild(card);
-    });
-}
-
-// Run this function every time the page loads
-loadIssues();
-
-// This data is passed from Python through the home route
-document.getElementById('displayUser').innerText = "{{ username }}";
-document.getElementById('displayRole').innerText = "{{ role }}";
+    // Run on page load
+    loadIssues();
 </script>
 
 </body>
