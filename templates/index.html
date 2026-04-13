@@ -141,6 +141,33 @@
             // We would call a function here to refresh the feed
         }
     });
+
+    // Function to load issues from the backend
+async function loadIssues() {
+    const response = await fetch('/get_issues');
+    const issues = await response.json();
+    
+    issueFeed.innerHTML = ''; // Clear the current list
+
+    issues.forEach(issue => {
+        const card = document.createElement('div');
+        card.className = 'issue-card';
+        card.innerHTML = `
+            <div class="issue-details">
+                <h3>${issue.title}</h3>
+                <p>${issue.description}</p>
+                <span class="issue-meta">Room: ${issue.room_number}</span>
+            </div>
+            <div>
+                <button class="upvote-btn">▲ ${issue.upvotes}</button>
+            </div>
+        `;
+        issueFeed.appendChild(card);
+    });
+}
+
+// Run this function every time the page loads
+loadIssues();
 </script>
 
 </body>
